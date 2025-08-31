@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.js";
 import cors from 'cors'
 import leadRouter from "./routes/lead.js";
+import customerRouter from "./routes/customer.js";
 
 export const app = express();
 
@@ -14,6 +15,7 @@ app.use(cookieParser()); // Middleware to parse cookies
 
 app.use('/api/auth', authRouter);
 app.use('/api/lead', leadRouter);
+app.use('/api/customers', customerRouter);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

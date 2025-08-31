@@ -82,7 +82,7 @@ leadRouter.get("/", userAuth, async (req, res) => {
     // Search by name or email (case-insensitive)
     if (req.query.search) {
       const searchRegex = new RegExp(req.query.search, "i"); // i → case-insensitive
-      filters.$or = [{ name: searchRegex }, { emailId: searchRegex }];
+      filters.$or = [{ name: searchRegex }, { emailId: searchRegex }, { phone: searchRegex }];
     }
 
     // Pagination
@@ -223,7 +223,6 @@ leadRouter.delete("/:leadId", userAuth, async (req, res) => {
 });
 
 
-
 leadRouter.post("/:leadId/convert", userAuth, async (req, res) => {
   try {
     const userRole = req.user.role;
@@ -244,9 +243,10 @@ leadRouter.post("/:leadId/convert", userAuth, async (req, res) => {
       name: lead.name,
       emailId: lead.emailId,
       phone: lead.phone,
-      source: lead.source,
-      assignedAgent: lead.assignedAgent,
-      leadId: lead._id
+      owner: lead.assignedAgent, // owner is the agent
+      notes: [],
+      tags: [],
+      deals: []
     });
 
     // Optional: archive the lead
@@ -257,11 +257,11 @@ leadRouter.post("/:leadId/convert", userAuth, async (req, res) => {
       message: "Lead converted to customer successfully",
       customer
     });
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 
