@@ -30,6 +30,9 @@ leadRouter.post("/", userAuth, async (req, res) => {
       }
       assignedAgentId = agent._id;
     } else if (req.user.role === "Agent") {
+      if (req.body.assignedAgent && req.body.assignedAgent !== req.user.emailId) {
+        return res.status(403).json({ error: "Agents can only assign leads to themselves" });
+      }
       assignedAgentId = req.user._id;
     } else {
       return res.status(403).json({ error: "Not allowed" });

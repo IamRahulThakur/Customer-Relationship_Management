@@ -1,9 +1,10 @@
 import express from "express";
-import {TaskModel} from "../model/task.js";
+import { TaskModel } from "../model/task.js";
 import { userAuth } from "../middlewares/auth.js";
 import { UserModel } from "../model/user.js";
 import { LeadModel } from "../model/lead.js";
 import { CustomerModel } from "../model/customer.js";
+import { ActivityModel } from "../model/activity.js";
 
 const taskRouter = express.Router();
 
@@ -14,22 +15,43 @@ taskRouter.get("/", userAuth, async (req, res) => {
   try {
     const role = req.user.role;
     const filters = {};
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
     if (role === "Agent") {
-      filters.owner = req.user._id; // agents only see their own
+      filters.owner = req.user._id;
     } else if (req.query.owner) {
-      filters.owner = req.query.owner; // admins can filter by owner
+      filters.owner = req.query.owner;
     }
 
     if (req.query.status) filters.status = req.query.status;
 
     if (req.query.due === "overdue") {
       filters.dueDate = { $lt: new Date(), $ne: null };
+      filters.status = { $ne: "Done" }; // Only show overdue if not done
     }
 
-    const tasks = await TaskModel.find(filters).populate("owner", "name email");
+    const tasks = await TaskModel.find(filters)
+      .populate("owner", "name emailId")
+      .populate("relatedTo", "name emailId")
+      .skip(skip)
+      .limit(limit)
+      .sort({ dueDate: 1 });
 
-    res.json(tasks);
+    const totalTasks = await TaskModel.countDocuments(filters);
+    const totalPages = Math.ceil(totalTasks / limit);
+
+    res.json({
+      tasks,
+      pagination: {
+        page,
+        totalPages,
+        totalTasks,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -42,22 +64,16 @@ taskRouter.post("/", userAuth, async (req, res) => {
   try {
     const { title, dueDate, status, priority } = req.body;
 
-    if (!title || !dueDate || !req.body.relatedTo || !req.body.owner) {
+    if (!title || !dueDate || !req.body.relatedTo) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Validate dueDate format
+    // Validate dueDate format but don't reject past dates
     if (isNaN(Date.parse(dueDate))) {
       return res.status(400).json({ error: "Invalid dueDate format" });
     }
 
-    // Ensure dueDate is not in the past
-    if (new Date(dueDate) < new Date()) {
-      return res.status(400).json({ error: "Due date must be in the future" });
-    }
-
-    // We have to set RelatedTo and RelatedModel by taking emailId
-    // of Lead || Customer
+    // Find related entity by email
     let findCustomer;
     let findLead = await LeadModel.findOne({ emailId: req.body.relatedTo });
     if (!findLead) {
@@ -67,7 +83,7 @@ taskRouter.post("/", userAuth, async (req, res) => {
       }
     }
 
-    // Here we are assigning RelatedTo & RelatedModel
+    // Assign RelatedTo & RelatedModel
     let relatedModel;
     let relatedTo;
     if (findLead) {
@@ -78,16 +94,18 @@ taskRouter.post("/", userAuth, async (req, res) => {
       relatedModel = "Customer";
     }
 
-    // Here we are assigning Owner
+    // Assign Owner
     let assignedOwner;
     if (req.user.role === "Admin") {
+      if (!req.body.owner) {
+        return res.status(400).json({ error: "Owner is required for Admin" });
+      }
       const findOwner = await UserModel.findOne({ emailId: req.body.owner });
       if (!findOwner) {
         return res.status(404).json({ error: "Owner not found" });
       }
       assignedOwner = findOwner._id;
-    }
-    if (req.user.role === "Agent") {
+    } else if (req.user.role === "Agent") {
       assignedOwner = req.user._id;
     }
 
@@ -101,7 +119,12 @@ taskRouter.post("/", userAuth, async (req, res) => {
       owner: assignedOwner,
     });
 
-    res.status(201).json(task);
+    // Populate the task before returning it
+    const populatedTask = await TaskModel.findById(task._id)
+      .populate("owner", "name emailId")
+      .populate("relatedTo", "name emailId");
+
+    res.status(201).json(populatedTask);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -117,7 +140,10 @@ taskRouter.patch("/:id", userAuth, async (req, res) => {
     if (!task) return res.status(404).json({ error: "Task not found" });
 
     // only Admin or owner can update
-    if (req.user.role === "Agent" && task.owner.toString() !== req.user._id.toString()) {
+    if (
+      req.user.role === "Agent" &&
+      task.owner.toString() !== req.user._id.toString()
+    ) {
       return res.status(403).json({ error: "Not allowed" });
     }
 

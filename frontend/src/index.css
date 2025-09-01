@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Ensure modals are visible */
+.z-50 {
+  z-index: 50;
+}
+
+/* Make sure modal background is visible */
+.bg-opacity-50 {
+  --tw-bg-opacity: 0.5;
+}

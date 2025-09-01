@@ -3,6 +3,7 @@ import express from "express";
 import { userAuth } from "../middlewares/auth.js";
 import { CustomerModel } from "../model/customer.js";
 import { UserModel } from "../model/user.js";
+import { ActivityModel } from "../model/activity.js";
 
 const customerRouter = express.Router();
 
@@ -79,14 +80,30 @@ customerRouter.post("/", userAuth, async (req, res) => {
       return res.status(400).json({ error: "Name and Email are required" });
     }
 
-    // Assign owner based on role
+    // 🔹 Resolve owner
     let customerOwner;
+
     if (role === "Admin") {
-      customerOwner = owner ? owner : req.user._id;
-    } else {
+      if (owner) {
+        // Convert owner emailId to ObjectId
+        const user = await UserModel.findOne({ emailId: owner });
+        if (!user) {
+          return res.status(404).json({ error: "Owner user not found" });
+        }
+        customerOwner = user._id;
+      } else {
+        customerOwner = req.user._id;
+      }
+    } else if (role === "Agent") {
+      if (owner && owner !== req.user.emailId) {
+        return res
+          .status(403)
+          .json({ error: "Agents can only create customers for themselves" });
+      }
       customerOwner = req.user._id;
     }
 
+    // 🔹 Create Customer
     const customer = await CustomerModel.create({
       name,
       company,
@@ -98,11 +115,25 @@ customerRouter.post("/", userAuth, async (req, res) => {
       deals: deals || [],
     });
 
+    // 🔹 Log Activity
+    await ActivityModel.create({
+      action: "Customer Created",
+      entity: "Customer",
+      entityId: customer._id,
+      performedBy: req.user._id,
+      details: {
+        customerName: customer.name,
+        customerEmail: customer.emailId,
+      },
+    });
+
     res.status(201).json(customer);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+
 
 /**
  * PATCH /api/customers/:id
