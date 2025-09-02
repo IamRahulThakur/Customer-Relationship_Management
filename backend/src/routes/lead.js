@@ -6,7 +6,7 @@ import { LeadModel } from "../model/lead.js";
 import {CustomerModel} from "../model/customer.js";
 import {leadValidator} from "../utils/leadValidation.js";
 import {leadUpdateValidator} from "../utils/leadUpdateValidation.js";
-
+import { ActivityModel } from "../model/activity.js";
 const leadRouter = express.Router();
 
 /**
@@ -47,6 +47,16 @@ leadRouter.post("/", userAuth, async (req, res) => {
       phone,
       source,
       assignedAgent: assignedAgentId,
+    });
+
+    await ActivityModel.create({
+      action: "Lead Created",
+      entity: "Lead",
+      details: { 
+        name: lead.name,
+        emailId: lead.emailId,
+        phone: lead.phone,
+      },
     });
 
     res.status(201).json(lead);
@@ -194,6 +204,14 @@ leadRouter.patch("/:leadId", userAuth, async (req, res) => {
       req.body,
       { new: true }
     );
+
+    await ActivityModel.create({
+      action: "Lead Updated",
+      entity: "Lead",
+      details: {
+        changes: req.body
+      }
+    });
 
     res.status(200).json(updatedLead);
   } catch (err) {

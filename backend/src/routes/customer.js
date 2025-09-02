@@ -124,8 +124,6 @@ customerRouter.post("/", userAuth, async (req, res) => {
     await ActivityModel.create({
       action: "Customer Created",
       entity: "Customer",
-      entityId: customer._id,
-      performedBy: req.user._id,
       details: {
         customerName: customer.name,
         customerEmail: customer.emailId,
@@ -137,7 +135,6 @@ customerRouter.post("/", userAuth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 
 /**
@@ -164,6 +161,14 @@ customerRouter.patch("/:id", userAuth, async (req, res) => {
       req.body,
       { new: true }
     ).populate("owner", "name emailId role");
+
+    await ActivityModel.create({
+      action: "Customer Updated",
+      entity: "Customer",
+      details: {
+        changes: req.body
+      }
+    });
 
     res.status(200).json(updatedCustomer);
   } catch (err) {

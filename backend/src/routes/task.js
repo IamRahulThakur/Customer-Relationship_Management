@@ -120,6 +120,17 @@ taskRouter.post("/", userAuth, async (req, res) => {
       owner: assignedOwner,
     });
 
+    await ActivityModel.create({
+      action: "Task Created",
+      entity: "Task",
+      details: { 
+        title : task.title,
+        dueDate : task.dueDate,
+        status : task.status,
+        priority : task.priority
+      },
+    });
+
     // Populate the task before returning it
     const populatedTask = await TaskModel.findById(task._id)
       .populate("owner", "name emailId")
@@ -153,6 +164,12 @@ taskRouter.patch("/:id", userAuth, async (req, res) => {
       if (req.body[field] !== undefined) {
         task[field] = req.body[field];
       }
+    });
+
+    await ActivityModel.create({
+      action: "Task Updated",
+      entity: "Task",
+      details: { changes: req.body },
     });
 
     await task.save();

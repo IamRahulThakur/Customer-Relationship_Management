@@ -2,6 +2,7 @@
 import express from "express";
 import { UserModel } from "../model/user.js";
 import { userAuth } from "../middlewares/auth.js";
+import { ActivityModel } from "../model/activity.js";
 
 const userRouter = express.Router();
 
