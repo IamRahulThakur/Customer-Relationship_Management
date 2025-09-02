@@ -26,7 +26,7 @@ const CLIENT_URL = process.env.VITE_CLIENT_URL || "http://localhost:5173";
 // CORS configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? [CLIENT_URL, "https://your-production-domain.com"] 
+    ? [CLIENT_URL, "https://crm-frontend-1534.onrender.com"] 
     : [CLIENT_URL, "http://localhost:5173"],
   credentials: true,
 };
