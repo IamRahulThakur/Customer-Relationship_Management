@@ -56,8 +56,8 @@ const seedData = async () => {
     for (let i = 1; i <= 10; i++) {
       const lead = await LeadModel.create({
         name: `Lead ${i}`,
-        emailId: `lead${i}@example.com`,
-        phone: `+1-555-01${i.toString().padStart(2, '0')}`,
+        emailId: `lead${i}@gmail.com`,
+        phone: `99911123${i.toString().padStart(2, '0')}`,
         status: leadStatuses[i % 4],
         source: leadSources[i % 5],
         assignedAgent: [agent1._id, agent2._id][i % 2],
@@ -74,8 +74,8 @@ const seedData = async () => {
     for (let i = 1; i <= 5; i++) {
       const customer = await CustomerModel.create({
         name: `Customer ${i}`,
-        emailId: `customer${i}@example.com`,
-        phone: `+1-555-02${i.toString().padStart(2, '0')}`,
+        emailId: `customer${i}@gmail.com`,
+        phone: `97193727${i.toString().padStart(2, '0')}`,
         company: companies[i - 1],
         owner: [agent1._id, agent2._id][i % 2],
         tags: i % 2 === 0 ? ["VIP", "Enterprise"] : ["Standard"],
