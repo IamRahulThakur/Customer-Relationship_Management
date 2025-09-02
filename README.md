@@ -5,7 +5,7 @@ Designed for sales teams to manage leads, customers, tasks, and track activities
 
 ---
 
-![CRM](https://img.shields.io/badge/CRM-Mini%2520CRM-blue)
+![CRM](https://img.shields.io/badge/CRM-MiniCRM-blue)
 ![Frontend](https://img.shields.io/badge/Frontend-React.js-61dafb)
 ![Backend](https://img.shields.io/badge/Backend-Node.js-green)
 ![Database](https://img.shields.io/badge/Database-MongoDB-success)
