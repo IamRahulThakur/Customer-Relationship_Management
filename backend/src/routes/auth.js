@@ -61,7 +61,7 @@ authRouter.post("/login", async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "none",
       maxAge: 1 * 24 * 60 * 60 * 1000, // 1 Day
     });
 
@@ -88,7 +88,7 @@ authRouter.post("/refresh", userAuth, async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "none",
       maxAge: 1 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({
