@@ -4,6 +4,7 @@ import { userAuth } from "../middlewares/auth.js";
 import { CustomerModel } from "../model/customer.js";
 import { UserModel } from "../model/user.js";
 import { ActivityModel } from "../model/activity.js";
+import { customerValidator } from "../utils/customerValidation.js";
 
 const customerRouter = express.Router();
 
@@ -80,6 +81,8 @@ customerRouter.post("/", userAuth, async (req, res) => {
       return res.status(400).json({ error: "Name and Email are required" });
     }
 
+    
+
     // 🔹 Resolve owner
     let customerOwner;
 
@@ -102,6 +105,8 @@ customerRouter.post("/", userAuth, async (req, res) => {
       }
       customerOwner = req.user._id;
     }
+
+    await customerValidator(req);
 
     // 🔹 Create Customer
     const customer = await CustomerModel.create({

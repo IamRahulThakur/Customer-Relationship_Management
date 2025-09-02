@@ -1,4 +1,3 @@
-// File: src/pages/Tasks.jsx
 import { useEffect, useState } from "react";
 import api from "../api/axios";
 import Table from "../components/Table";
@@ -129,7 +128,6 @@ export default function Tasks() {
     return types[priority] || "default";
   };
 
-  // In the handleCreateTask function, replace:
   const handleCreateTask = async (e) => {
     e.preventDefault();
     setError("");
@@ -145,30 +143,24 @@ export default function Tasks() {
         return;
       }
 
+      // Prepare task data - send email addresses, not ObjectIds
       const taskData = {
         title: formData.title,
         dueDate: formData.dueDate,
         status: formData.status,
         priority: formData.priority,
-        relatedTo: selectedEntity._id, // Use ObjectId instead of email
-        relatedModel: selectedEntity.type, // Add the model type
-        owner: formData.owner,
+        relatedTo: selectedEntity.email, // Send email, not ObjectId
       };
 
-      // For agents, they can only assign to themselves
-      if (user.role === "Agent") {
-        // Find user by email to get ObjectId
-        const agentUser = users.find((u) => u.emailId === user.emailId);
-        if (agentUser) {
-          taskData.owner = agentUser._id;
+      // Only send owner email for Admin users
+      if (user.role === "Admin") {
+        if (!formData.owner) {
+          setError("Please select an owner for the task");
+          return;
         }
-      } else if (formData.owner) {
-        // For admin, find user by email to get ObjectId
-        const selectedUser = users.find((u) => u.emailId === formData.owner);
-        if (selectedUser) {
-          taskData.owner = selectedUser._id;
-        }
+        taskData.owner = formData.owner; // This should be email
       }
+      // For Agent: no need to send owner, backend will use req.user._id
 
       console.log("Sending task data:", taskData);
 
@@ -224,25 +216,25 @@ export default function Tasks() {
   };
 
   const openEditModal = (task) => {
-  setSelectedTask(task);
-  
-  // Format the date for datetime-local input
-  let formattedDueDate = "";
-  if (task.dueDate) {
-    const date = new Date(task.dueDate);
-    // Convert to local datetime string in the format YYYY-MM-DDTHH:MM
-    formattedDueDate = date.toISOString().slice(0, 16);
-  }
-  
-  setEditFormData({
-    title: task.title,
-    dueDate: formattedDueDate,
-    status: task.status,
-    priority: task.priority,
-  });
-  setShowEditModal(true);
-  setError("");
-};
+    setSelectedTask(task);
+    
+    // Format the date for datetime-local input
+    let formattedDueDate = "";
+    if (task.dueDate) {
+      const date = new Date(task.dueDate);
+      // Convert to local datetime string in the format YYYY-MM-DDTHH:MM
+      formattedDueDate = date.toISOString().slice(0, 16);
+    }
+    
+    setEditFormData({
+      title: task.title,
+      dueDate: formattedDueDate,
+      status: task.status,
+      priority: task.priority,
+    });
+    setShowEditModal(true);
+    setError("");
+  };
 
   const columns = [
     { key: "title", label: "Title" },
@@ -275,7 +267,15 @@ export default function Tasks() {
     {
       key: "owner",
       label: "Owner",
-      render: (val) => val?.name || val?.emailId || "Unassigned",
+      render: (val, row) => {
+        const isCurrentUser = val?._id === user._id || val?.emailId === user.emailId;
+        return (
+          <span className={isCurrentUser ? "font-semibold text-blue-600" : ""}>
+            {val?.name || val?.emailId || "Unassigned"}
+            {isCurrentUser && " (You)"}
+          </span>
+        );
+      },
     },
     {
       key: "relatedTo",
@@ -310,7 +310,7 @@ export default function Tasks() {
       status: "Open",
       priority: "Medium",
       relatedTo: "",
-      owner: "",
+      owner: user.role === "Admin" ? "" : undefined,
     });
     setError("");
     setShowCreateModal(true);
@@ -523,6 +523,15 @@ export default function Tasks() {
               </select>
               <p className="text-xs text-gray-500 mt-1">
                 Select by email address
+              </p>
+            </div>
+          )}
+
+          {user.role === "Agent" && (
+            <div className="bg-blue-50 p-3 rounded border border-blue-200">
+              <p className="text-sm font-medium text-blue-700">Task Assignment</p>
+              <p className="text-sm text-blue-600">
+                This task will be automatically assigned to you ({user.name || user.emailId})
               </p>
             </div>
           )}

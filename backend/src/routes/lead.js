@@ -4,6 +4,7 @@ import { userAuth } from "../middlewares/auth.js";
 import { UserModel } from "../model/user.js";
 import { LeadModel } from "../model/lead.js";
 import {CustomerModel} from "../model/customer.js";
+import {leadValidator} from "../utils/leadValidation.js";
 
 const leadRouter = express.Router();
 
@@ -17,6 +18,7 @@ leadRouter.post("/", userAuth, async (req, res) => {
     const { name, emailId, phone, source, assignedAgent } = req.body;
     let assignedAgentId;
 
+    await leadValidator(req);
     if (req.user.role === "Admin") {
       if (!assignedAgent) {
         return res.status(400).json({ error: "assignedAgent is required" });
@@ -151,6 +153,7 @@ leadRouter.patch("/:leadId", userAuth, async (req, res) => {
 
     if (!lead) return res.status(404).json({ error: "Lead not found" });
 
+    await leadValidator(req);
     // Agent can only update their own leads
     if (
       userRole === "Agent" &&

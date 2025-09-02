@@ -5,6 +5,7 @@ import { UserModel } from "../model/user.js";
 import { LeadModel } from "../model/lead.js";
 import { CustomerModel } from "../model/customer.js";
 import { ActivityModel } from "../model/activity.js";
+import { validateSignupData } from "../utils/validation.js";
 
 const taskRouter = express.Router();
 
