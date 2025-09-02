@@ -19,6 +19,9 @@ if (process.env.NODE_ENV !== 'production') {
 
 export const app = express();
 
+app.set("trust proxy", 1);
+
+
 // Environment variables
 const PORT = process.env.PORT || 3000;
 const CLIENT_URL = process.env.VITE_CLIENT_URL || "http://localhost:5173";
