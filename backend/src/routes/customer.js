@@ -124,13 +124,14 @@ customerRouter.post("/", userAuth, async (req, res) => {
     await ActivityModel.create({
       action: "Customer Created",
       entity: "Customer",
+      performedBy: req.user,
       details: {
         customerName: customer.name,
         customerEmail: customer.emailId,
       },
     });
 
-    res.status(201).json(customer);
+    res.status(201).json({customer , performedBy: req.user.name});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -165,6 +166,7 @@ customerRouter.patch("/:id", userAuth, async (req, res) => {
     await ActivityModel.create({
       action: "Customer Updated",
       entity: "Customer",
+      performedBy: req.user,
       details: {
         changes: req.body
       }

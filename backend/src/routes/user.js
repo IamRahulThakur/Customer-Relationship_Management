@@ -38,6 +38,12 @@ userRouter.patch("/:id", userAuth, async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    await ActivityModel.create({
+      action: "User Updated",
+      entity: "User",
+      performedBy: req.user
+    });
+
     res.json(updatedUser);
   } catch (error) {
     res.status(500).json({ error: error.message });

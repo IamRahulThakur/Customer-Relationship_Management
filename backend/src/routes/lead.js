@@ -52,6 +52,7 @@ leadRouter.post("/", userAuth, async (req, res) => {
     await ActivityModel.create({
       action: "Lead Created",
       entity: "Lead",
+      performedBy: req.user,
       details: { 
         name: lead.name,
         emailId: lead.emailId,
@@ -208,12 +209,13 @@ leadRouter.patch("/:leadId", userAuth, async (req, res) => {
     await ActivityModel.create({
       action: "Lead Updated",
       entity: "Lead",
+      performedBy: req.user,
       details: {
         changes: req.body
       }
     });
 
-    res.status(200).json(updatedLead);
+    res.status(200).json({updatedLead, performedBy: req.user.name});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

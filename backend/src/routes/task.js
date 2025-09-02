@@ -123,11 +123,12 @@ taskRouter.post("/", userAuth, async (req, res) => {
     await ActivityModel.create({
       action: "Task Created",
       entity: "Task",
-      details: { 
-        title : task.title,
-        dueDate : task.dueDate,
-        status : task.status,
-        priority : task.priority
+      performedBy: req.user,
+      details: {
+        title: task.title,
+        dueDate: task.dueDate,
+        status: task.status,
+        priority: task.priority
       },
     });
 
@@ -169,6 +170,7 @@ taskRouter.patch("/:id", userAuth, async (req, res) => {
     await ActivityModel.create({
       action: "Task Updated",
       entity: "Task",
+      performedBy: req.user,
       details: { changes: req.body },
     });
 
