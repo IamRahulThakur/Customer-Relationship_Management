@@ -23,11 +23,20 @@ export const app = express();
 const PORT = process.env.PORT || 3000;
 const CLIENT_URL = process.env.VITE_CLIENT_URL || "http://localhost:5173";
 
-// CORS configuration
+const allowedOrigins = [
+  CLIENT_URL,
+  "https://crm-frontend-1534.onrender.com",
+  "http://localhost:5173"
+];
+
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [CLIENT_URL, "https://crm-frontend-1534.onrender.com"] 
-    : [CLIENT_URL, "http://localhost:5173"],
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
 };
 
