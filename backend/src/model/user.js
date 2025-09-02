@@ -48,4 +48,6 @@ userSchema.methods.getJwtToken = function () {
   );
 };
 
+userSchema.index({ role: 1 });
+
 export const UserModel = mongoose.model("User", userSchema);

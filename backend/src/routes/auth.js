@@ -3,10 +3,17 @@ import { UserModel } from "../model/user.js";
 import { validateSignupData } from "../utils/validation.js";
 import bcrypt from "bcrypt";
 import { userAuth } from "../middlewares/auth.js";
+import { configDotenv } from "dotenv";
+
+configDotenv();
+
 
 const authRouter = express.Router();
 
 authRouter.post("/register", userAuth, async (req, res) => {
+
+  const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
+
   // Validate signup data
   try {
     const User = req.user;
@@ -19,7 +26,7 @@ authRouter.post("/register", userAuth, async (req, res) => {
 
     // Encrypt the password
     const { emailId, password, name, role } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
     // Creating a new user
     const user = new UserModel({
@@ -55,7 +62,7 @@ authRouter.post("/login", async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 1 * 24 * 60 * 60 * 1000, // 1 Day
     });
 
     res.status(200).json({
@@ -82,7 +89,7 @@ authRouter.post("/refresh", userAuth, async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 1 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({
       message: "Token refreshed successfully",
@@ -121,5 +128,6 @@ authRouter.get("/users", userAuth, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 export default authRouter;

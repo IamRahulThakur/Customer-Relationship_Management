@@ -24,4 +24,7 @@ const customerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+customerSchema.index({ owner: 1 });
+customerSchema.index({ tags: 1 });
+
 export const CustomerModel = mongoose.model("Customer", customerSchema);

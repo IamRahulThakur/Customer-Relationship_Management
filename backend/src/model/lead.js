@@ -36,4 +36,8 @@ const leadSchema = new mongoose.Schema(
 { timestamps: true }
 );
 
+leadSchema.index({ assignedAgent: 1 });
+leadSchema.index({ status: 1 });
+leadSchema.index({ createdAt: -1 });
+
 export const LeadModel = mongoose.model("Lead", leadSchema);
