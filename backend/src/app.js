@@ -12,7 +12,10 @@ import taskRouter from "./routes/task.js";
 import activityRouter from "./routes/activity.js";
 import userRouter from "./routes/user.js";
 
-dotenv.config();
+// Load environment variables based on NODE_ENV
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 export const app = express();
 
@@ -20,13 +23,15 @@ export const app = express();
 const PORT = process.env.PORT || 3000;
 const CLIENT_URL = process.env.VITE_CLIENT_URL || "http://localhost:5173";
 
-//  Middleware
-app.use(
-  cors({
-    origin: CLIENT_URL,
-    credentials: true,
-  })
-);
+// CORS configuration
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? [CLIENT_URL, "https://your-production-domain.com"] 
+    : [CLIENT_URL, "http://localhost:5173"],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json()); // Parse JSON
 app.use(cookieParser()); // Parse cookies
 

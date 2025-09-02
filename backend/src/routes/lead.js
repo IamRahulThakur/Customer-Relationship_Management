@@ -5,6 +5,7 @@ import { UserModel } from "../model/user.js";
 import { LeadModel } from "../model/lead.js";
 import {CustomerModel} from "../model/customer.js";
 import {leadValidator} from "../utils/leadValidation.js";
+import {leadUpdateValidator} from "../utils/leadUpdateValidation.js";
 
 const leadRouter = express.Router();
 
@@ -153,7 +154,7 @@ leadRouter.patch("/:leadId", userAuth, async (req, res) => {
 
     if (!lead) return res.status(404).json({ error: "Lead not found" });
 
-    await leadValidator(req);
+    await leadUpdateValidator(req);
     // Agent can only update their own leads
     if (
       userRole === "Agent" &&

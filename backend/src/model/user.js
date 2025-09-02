@@ -44,7 +44,7 @@ userSchema.methods.getJwtToken = function () {
   return jwt.sign(
     { userId: this._id, role: this.role },
     process.env.JWT_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "7d" }
   );
 };
 

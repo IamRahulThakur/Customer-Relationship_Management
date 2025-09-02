@@ -9,7 +9,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/app.js",
-    "start": "node src/app.js"
+    "start": "node src/app.js",
+    "build": "echo 'Backend build complete'",
+    "seed": "node src/script/seed.js",
+    "seed:reset": "node src/script/seed.js --force",
+    "seed:prod": "NODE_ENV=production node src/script/seed.js --force"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
