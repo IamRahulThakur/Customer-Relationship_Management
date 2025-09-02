@@ -1,8 +1,17 @@
-// File: src/pages/Dashboard.jsx (Fixed)
+// File: src/pages/Dashboard.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import useAuthStore from "../store/authStore";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
 
 export default function Dashboard() {
   const { user } = useAuthStore();
@@ -13,6 +22,7 @@ export default function Dashboard() {
     openTasks: 0,
     overdueTasks: 0,
     recentActivities: [],
+    leadsPerDay: [],
   });
   const [loading, setLoading] = useState(true);
 
@@ -36,7 +46,6 @@ export default function Dashboard() {
           "Closed Lost": 0,
         };
 
-        // Check if leads data is in the expected format
         const leadsData = leadsRes.data.leads || leadsRes.data || [];
         leadsData.forEach((lead) => {
           if (leadsByStatus[lead.status] !== undefined) {
@@ -44,10 +53,11 @@ export default function Dashboard() {
           }
         });
 
-        // Check if customers data is in the expected format
-        const customersData = customersRes.data.customers || customersRes.data || [];
-        
-        // Handle tasks data - it might be an object or array
+        // Customers data
+        const customersData =
+          customersRes.data.customers || customersRes.data || [];
+
+        // Tasks data
         let tasksData = [];
         if (Array.isArray(tasksRes.data)) {
           tasksData = tasksRes.data;
@@ -57,7 +67,6 @@ export default function Dashboard() {
           console.warn("Unexpected tasks response format:", tasksRes.data);
         }
 
-        // Count tasks
         const openTasks = tasksData.filter(
           (task) => task.status !== "Done"
         ).length;
@@ -66,17 +75,45 @@ export default function Dashboard() {
           return new Date(task.dueDate) < new Date() && task.status !== "Done";
         }).length;
 
-        // Handle activities data
-        const activitiesData = Array.isArray(activitiesRes.data) 
-          ? activitiesRes.data 
+        // Activities
+        const activitiesData = Array.isArray(activitiesRes.data)
+          ? activitiesRes.data
           : activitiesRes.data?.activities || [];
+
+        // Leads created per day (last 14 days)
+        const leadsCreatedByDay = {};
+        const today = new Date();
+
+        for (let i = 13; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(today.getDate() - i);
+          const dateKey = date.toISOString().split("T")[0]; // YYYY-MM-DD
+          leadsCreatedByDay[dateKey] = 0;
+        }
+
+        leadsData.forEach((lead) => {
+          if (lead.createdAt) {
+            const dateKey = new Date(lead.createdAt).toISOString().split("T")[0];
+            if (leadsCreatedByDay[dateKey] !== undefined) {
+              leadsCreatedByDay[dateKey]++;
+            }
+          }
+        });
+
+        const leadsPerDay = Object.entries(leadsCreatedByDay).map(
+          ([date, count]) => ({
+            date,
+            count,
+          })
+        );
 
         setStats({
           leadsByStatus,
           totalCustomers: customersData.length,
           openTasks,
           overdueTasks,
-          recentActivities: activitiesData.slice(0, 5),
+          recentActivities: activitiesData.slice(0, 10), // last 10 events
+          leadsPerDay,
         });
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
@@ -152,8 +189,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Leads Status */}
+      {/* Leads Status & Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Leads by Status */}
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-4">Leads by Status</h3>
           <div className="grid grid-cols-2 gap-4">
@@ -172,27 +210,45 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Leads Created per Day */}
         <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-          <div className="space-y-3">
-            {stats.recentActivities.length > 0 ? (
-              stats.recentActivities.map((activity) => (
-                <div
-                  key={activity._id}
-                  className="border-b pb-3 last:border-b-0"
-                >
-                  <p className="font-medium">{activity.action}</p>
-                  <p className="text-sm text-gray-600">
-                    By {activity.performedBy?.name || "Unknown"} •{" "}
-                    {new Date(activity.createdAt).toLocaleString()}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500">No recent activity</p>
-            )}
-          </div>
+          <h3 className="text-lg font-semibold mb-4">
+            Leads Created (Last 14 Days)
+          </h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={stats.leadsPerDay}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+              <YAxis />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="count"
+                stroke="#2563eb"
+                strokeWidth={2}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="bg-white p-4 rounded-lg shadow">
+        <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
+        <div className="space-y-3">
+          {stats.recentActivities.length > 0 ? (
+            stats.recentActivities.map((activity) => (
+              <div key={activity._id} className="border-b pb-3 last:border-b-0">
+                <p className="font-medium">{activity.action}</p>
+                <p className="text-sm text-gray-600">
+                  By {activity.performedBy?.name || "Unknown"} •{" "}
+                  {new Date(activity.createdAt).toLocaleString()}
+                </p>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500">No recent activity</p>
+          )}
         </div>
       </div>
     </div>
