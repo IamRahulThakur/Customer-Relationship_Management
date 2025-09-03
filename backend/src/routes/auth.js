@@ -7,11 +7,9 @@ import { configDotenv } from "dotenv";
 
 configDotenv();
 
-
 const authRouter = express.Router();
 
 authRouter.post("/register", userAuth, async (req, res) => {
-
   const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
 
   // Validate signup data
@@ -58,11 +56,13 @@ authRouter.post("/login", async (req, res) => {
     // Create JWT Token
     const token = await user.getJwtToken();
     // Add Token to cookie and send response back to user
+    const isProduction = process.env.NODE_ENV === "production";
+
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
-      maxAge: 1 * 24 * 60 * 60 * 1000, // 1 Day
+      secure: isProduction, // only true in production (must be HTTPS)
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
     res.status(200).json({
@@ -85,11 +85,13 @@ authRouter.post("/refresh", userAuth, async (req, res) => {
     const user = req.user;
     const token = await user.getJwtToken();
     // Add Token to cookie and send response back to user
+    const isProduction = process.env.NODE_ENV === "production";
+
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
-      maxAge: 1 * 24 * 60 * 60 * 1000,
+      secure: isProduction, // only true in production (must be HTTPS)
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
     res.status(200).json({
       message: "Token refreshed successfully",
@@ -119,15 +121,16 @@ authRouter.post("/logout", (req, res) => {
 authRouter.get("/users", userAuth, async (req, res) => {
   try {
     if (req.user.role !== "Admin") {
-      return res.status(403).json({ error: "Only admins can access user list" });
+      return res
+        .status(403)
+        .json({ error: "Only admins can access user list" });
     }
-    
+
     const users = await UserModel.find({}, { password: 0 }); // Exclude passwords
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 export default authRouter;
