@@ -25,6 +25,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // If login failed, just return error, don't redirect
+    if (originalRequest.url.includes("/auth/login")) {
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
@@ -34,7 +39,6 @@ api.interceptors.response.use(
 
         useAuthStore.getState().setAuth(user, token);
 
-        // Retry the original request with the new token
         originalRequest.headers.Authorization = `Bearer ${token}`;
         return api(originalRequest);
       } catch (refreshError) {
@@ -47,5 +51,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 
 export default api;
